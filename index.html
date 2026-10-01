@@ -24,12 +24,12 @@
       <form id="cf-creation-corps">
         <label>Mot de passe maître
           <span class="cf-champ-bouton">
-            <input type="password" id="cf-creation-mdp" autocomplete="new-password" required minlength="8">
+            <input type="password" id="cf-creation-mdp" name="new-password" autocomplete="new-password" required minlength="8">
             <button type="button" id="cf-creation-voir" aria-label="Afficher le mot de passe">👁️</button>
           </span>
         </label>
         <div id="cf-creation-force" class="cf-force"></div>
-        <label>Confirmer le mot de passe <input type="password" id="cf-creation-confirmation" autocomplete="new-password" required></label>
+        <label>Confirmer le mot de passe <input type="password" id="cf-creation-confirmation" name="new-password-confirm" autocomplete="new-password" required></label>
         <label>Indice (optionnel, reste visible avant déverrouillage -- reste vague)
           <input type="text" id="cf-creation-indice" maxlength="80" placeholder="Ex. « comme d'habitude, en mieux »">
         </label>
@@ -46,7 +46,7 @@
       <img src="icons/icon-192.png" alt="" class="cf-logo">
       <h1>Coffre verrouillé</h1>
       <form id="cf-verrou-corps">
-        <label>Mot de passe maître <input type="password" id="cf-verrou-mdp" autocomplete="current-password" autofocus required></label>
+        <label>Mot de passe maître <input type="password" id="cf-verrou-mdp" name="password" autocomplete="current-password" autofocus required></label>
         <p class="cf-erreur" id="cf-verrou-erreur" hidden></p>
         <button type="submit" id="cf-verrou-valider" class="cf-primaire cf-large">🔓 Déverrouiller</button>
       </form>
@@ -79,13 +79,13 @@
       <label>Catégorie <select id="cf-f-categorie"></select></label>
       <label>Identifiant / login
         <span class="cf-champ-bouton">
-          <input type="text" id="cf-f-login" autocomplete="off" maxlength="120">
+          <input type="text" id="cf-f-login" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" maxlength="120">
           <button type="button" id="cf-f-login-copier" aria-label="Copier l'identifiant">📋</button>
         </span>
       </label>
       <label>Mot de passe / code
         <span class="cf-champ-bouton">
-          <input type="password" id="cf-f-mdp" autocomplete="new-password" maxlength="200">
+          <input type="password" id="cf-f-mdp" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" maxlength="200">
           <button type="button" id="cf-f-mdp-voir" aria-label="Afficher">👁️</button>
           <button type="button" id="cf-f-mdp-copier" aria-label="Copier">📋</button>
         </span>
@@ -123,10 +123,10 @@
   <dialog id="cf-changer-mdp" class="cf-dialog">
     <h2>Changer le mot de passe maître</h2>
     <form id="cf-chg-corps">
-      <label>Mot de passe actuel <input type="password" id="cf-chg-actuel" autocomplete="current-password" required></label>
-      <label>Nouveau mot de passe <input type="password" id="cf-chg-nouveau" autocomplete="new-password" required minlength="8"></label>
+      <label>Mot de passe actuel <input type="password" id="cf-chg-actuel" name="password" autocomplete="current-password" required></label>
+      <label>Nouveau mot de passe <input type="password" id="cf-chg-nouveau" name="new-password" autocomplete="new-password" required minlength="8"></label>
       <div id="cf-chg-force" class="cf-force"></div>
-      <label>Confirmer le nouveau mot de passe <input type="password" id="cf-chg-confirmation" autocomplete="new-password" required></label>
+      <label>Confirmer le nouveau mot de passe <input type="password" id="cf-chg-confirmation" name="new-password-confirm" autocomplete="new-password" required></label>
       <label>Nouvel indice (optionnel) <input type="text" id="cf-chg-indice" maxlength="80"></label>
       <p class="cf-erreur" id="cf-chg-erreur" hidden></p>
       <div class="cf-boutons">
