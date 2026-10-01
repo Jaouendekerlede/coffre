@@ -131,6 +131,7 @@ export function initialiserReglages(apresReinitialisation) {
     $("cf-theme").value = p.theme ?? "auto";
     $("cf-delai-verrou").value = String(p.delaiVerrouMs ?? 180000);
     $("cf-sauvegarde-retour").hidden = true;
+    $("cf-pin-etat").textContent = pinActif() ? "🔢 Code PIN activé : demandé en plus du mot de passe." : "Aucun code PIN -- tu peux en ajouter un ci-dessous.";
     $("cf-reglages").showModal();
   });
   $("cf-reglages-fermer").addEventListener("click", () => $("cf-reglages").close());

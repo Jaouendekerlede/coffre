@@ -2,7 +2,7 @@
 // jour publiée est prise tout de suite), la copie ne sert que sans réseau.
 // Le coffre (déjà chiffré) est dans le localStorage : rien d'autre à cacher.
 
-const CACHE_NOM = "coffre-v3";
+const CACHE_NOM = "coffre-v4";
 const FICHIERS_COQUILLE = ["./", "./index.html", "./style.css", "./manifest.json", "./js/main.js", "./js/verrou.js", "./js/liste.js", "./js/formulaire.js", "./js/reglages.js", "./js/coffre.js", "./js/crypto.js", "./js/chargeur.js", "./js/entrees.js", "./js/generateur.js", "./js/restauration.js", "./js/storage.js", "./js/theme.js", "./js/utils.js", "./js/config.js", "./js/mentions.js", "./js/vendor/hash-wasm.umd.min.js", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

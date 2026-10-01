@@ -128,7 +128,7 @@
 
   <!-- Changement du mot de passe maître -->
   <dialog id="cf-changer-mdp" class="cf-dialog">
-    <h2>Changer le mot de passe maître</h2>
+    <h2>Mot de passe maître et code PIN</h2>
     <form id="cf-chg-corps">
       <label>Mot de passe actuel <input type="password" id="cf-chg-actuel" name="password" autocomplete="current-password" required></label>
       <label id="cf-chg-pin-actuel-zone" hidden>Code PIN actuel <input type="password" id="cf-chg-pin-actuel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
@@ -177,7 +177,8 @@
     </section>
     <section>
       <h3>Sécurité</h3>
-      <button type="button" id="cf-changer-mdp-btn" class="cf-large">🔑 Changer le mot de passe maître</button>
+      <p class="cf-aide" id="cf-pin-etat"></p>
+      <button type="button" id="cf-changer-mdp-btn" class="cf-large">🔑 Mot de passe maître et code PIN</button>
     </section>
     <section>
       <h3>Sauvegarde</h3>
