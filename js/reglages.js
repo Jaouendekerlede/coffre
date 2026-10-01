@@ -1,14 +1,17 @@
 // Fenêtre Réglages : thème, délai de verrouillage automatique, changement du
-// mot de passe maître, lien de sauvegarde, remise à zéro et mentions légales.
+// mot de passe maître (et du code PIN), lien de sauvegarde, remise à zéro et
+// mentions légales.
 
 import { LIEN_LONG } from "./config.js";
-import { changerMotDePasse, reinitialiserCoffre, verifierMotDePasse } from "./coffre.js";
+import { changerMotDePasse, pinActif, reinitialiserCoffre, verifierMotDePasse } from "./coffre.js";
 import { estimerForce } from "./generateur.js";
 import { MENTION_COURTE, MENTION_LEGALE, VERSION_TEXTE } from "./mentions.js";
 import { creerLienSauvegarde } from "./restauration.js";
 import { lirePrefs, sauverPrefs } from "./storage.js";
 import { appliquerTheme } from "./theme.js";
 import { $, message } from "./utils.js";
+
+const PIN_VALIDE = /^\d{6}$/;
 
 let surReinitialisation = () => {};
 
@@ -21,9 +24,15 @@ function majForceChangement() {
 
 function ouvrirChangementMdp() {
   $("cf-chg-actuel").value = "";
+  $("cf-chg-pin-actuel").value = "";
+  $("cf-chg-pin-actuel-zone").hidden = !pinActif();
   $("cf-chg-nouveau").value = "";
   $("cf-chg-confirmation").value = "";
   $("cf-chg-indice").value = "";
+  $("cf-chg-pin-active").checked = pinActif();
+  $("cf-chg-pin-zone").hidden = !pinActif();
+  $("cf-chg-pin").value = "";
+  $("cf-chg-pin-confirmation").value = "";
   $("cf-chg-erreur").hidden = true;
   majForceChangement();
   $("cf-changer-mdp").showModal();
@@ -34,8 +43,12 @@ async function validerChangementMdp(e) {
   const erreur = $("cf-chg-erreur");
   erreur.hidden = true;
   const actuel = $("cf-chg-actuel").value;
+  const pinActuel = $("cf-chg-pin-actuel").value;
   const nouveau = $("cf-chg-nouveau").value;
   const confirmation = $("cf-chg-confirmation").value;
+  const avecNouveauPin = $("cf-chg-pin-active").checked;
+  const nouveauPin = $("cf-chg-pin").value;
+  const nouveauPinConfirmation = $("cf-chg-pin-confirmation").value;
   if (nouveau.length < 8) {
     erreur.textContent = "Au moins 8 caractères pour le nouveau mot de passe.";
     erreur.hidden = false;
@@ -46,19 +59,32 @@ async function validerChangementMdp(e) {
     erreur.hidden = false;
     return;
   }
+  if (avecNouveauPin && !PIN_VALIDE.test(nouveauPin)) {
+    erreur.textContent = "Le nouveau code PIN doit faire exactement 6 chiffres.";
+    erreur.hidden = false;
+    return;
+  }
+  if (avecNouveauPin && nouveauPin !== nouveauPinConfirmation) {
+    erreur.textContent = "Les deux saisies du nouveau code PIN ne correspondent pas.";
+    erreur.hidden = false;
+    return;
+  }
   $("cf-chg-valider").disabled = true;
   try {
-    if (!(await verifierMotDePasse(actuel))) {
-      erreur.textContent = "Mot de passe actuel incorrect.";
+    if (!(await verifierMotDePasse(actuel, pinActuel))) {
+      erreur.textContent = pinActif() ? "Mot de passe ou code PIN actuel incorrect." : "Mot de passe actuel incorrect.";
       erreur.hidden = false;
       return;
     }
-    await changerMotDePasse(nouveau, $("cf-chg-indice").value.trim());
+    await changerMotDePasse(nouveau, $("cf-chg-indice").value.trim(), avecNouveauPin ? nouveauPin : "");
     $("cf-chg-actuel").value = "";
+    $("cf-chg-pin-actuel").value = "";
     $("cf-chg-nouveau").value = "";
     $("cf-chg-confirmation").value = "";
+    $("cf-chg-pin").value = "";
+    $("cf-chg-pin-confirmation").value = "";
     $("cf-changer-mdp").close();
-    message("✅ Mot de passe maître changé.");
+    message(avecNouveauPin ? "✅ Mot de passe maître et code PIN changés." : "✅ Mot de passe maître changé.");
   } catch (err) {
     erreur.textContent = `⚠️ ${err.message}`;
     erreur.hidden = false;
@@ -81,7 +107,7 @@ async function creerSauvegarde() {
       // Presse-papiers refusé : le lien reste affiché pour le copier à la main.
     }
     const trop_long = lien.length > LIEN_LONG ? " ⚠️ Il est assez long : certaines messageries le coupent, préfère un mail ou une note." : "";
-    retour.textContent = copie ? `✅ Lien copié dans le presse-papiers.${trop_long} Il est déjà chiffré : il ne révèle rien sans ton mot de passe maître.` : `Copie ce lien :${trop_long} ${lien}`;
+    retour.textContent = copie ? `✅ Lien copié dans le presse-papiers.${trop_long} Il est déjà chiffré : il ne révèle rien sans ton mot de passe maître${pinActif() ? " ni ton code PIN" : ""}.` : `Copie ce lien :${trop_long} ${lien}`;
   } catch (e) {
     retour.textContent = `⚠️ Impossible de créer le lien : ${e.message}`;
   }
@@ -117,6 +143,13 @@ export function initialiserReglages(apresReinitialisation) {
   $("cf-changer-mdp-btn").addEventListener("click", ouvrirChangementMdp);
   $("cf-chg-fermer").addEventListener("click", () => $("cf-changer-mdp").close());
   $("cf-chg-nouveau").addEventListener("input", majForceChangement);
+  $("cf-chg-pin-active").addEventListener("change", (e) => {
+    $("cf-chg-pin-zone").hidden = !e.target.checked;
+    if (!e.target.checked) {
+      $("cf-chg-pin").value = "";
+      $("cf-chg-pin-confirmation").value = "";
+    }
+  });
   $("cf-chg-corps").addEventListener("submit", validerChangementMdp);
 
   $("cf-sauvegarde-btn").addEventListener("click", creerSauvegarde);

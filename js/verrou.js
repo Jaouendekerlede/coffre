@@ -1,12 +1,15 @@
 // Écrans de verrouillage : création du coffre (premier lancement), saisie du
-// mot de passe maître, et verrouillage automatique (inactivité ou appli mise
-// en arrière-plan). Affiche aussi l'écran principal une fois déverrouillé.
+// mot de passe maître (et du code PIN, si le coffre en a un), et verrouillage
+// automatique (inactivité ou appli mise en arrière-plan). Affiche aussi
+// l'écran principal une fois déverrouillé.
 
 import { DELAI_ARRIERE_PLAN_MS, DELAI_INACTIVITE_MS } from "./config.js";
-import { coffreExiste, creerCoffre, deverrouiller, estDeverrouille, indiceMotDePasse, reinitialiserCoffre, verrouiller } from "./coffre.js";
+import { coffreExiste, creerCoffre, deverrouiller, estDeverrouille, indiceMotDePasse, pinActif, reinitialiserCoffre, verrouiller } from "./coffre.js";
 import { estimerForce } from "./generateur.js";
 import { lirePrefs } from "./storage.js";
 import { $, message } from "./utils.js";
+
+const PIN_VALIDE = /^\d{6}$/;
 
 let surDeverrouille = () => {};
 let surVerrouille = () => {};
@@ -29,6 +32,8 @@ export function verrouillerMaintenant(raison = "manuel") {
   verrouiller();
   clearTimeout(minuteur);
   $("cf-verrou-mdp").value = "";
+  $("cf-verrou-pin").value = "";
+  $("cf-verrou-pin-zone").hidden = !pinActif();
   $("cf-verrou-erreur").hidden = true;
   $("cf-verrou-indice").hidden = true;
   afficherEcran("cf-verrou");
@@ -47,6 +52,9 @@ async function soumettreCreation(e) {
   e.preventDefault();
   const mdp = $("cf-creation-mdp").value;
   const confirmation = $("cf-creation-confirmation").value;
+  const avecPin = $("cf-creation-pin-active").checked;
+  const pin = $("cf-creation-pin").value;
+  const pinConfirmation = $("cf-creation-pin-confirmation").value;
   const erreur = $("cf-creation-erreur");
   erreur.hidden = true;
   if (mdp.length < 8) {
@@ -55,7 +63,17 @@ async function soumettreCreation(e) {
     return;
   }
   if (mdp !== confirmation) {
-    erreur.textContent = "Les deux saisies ne correspondent pas.";
+    erreur.textContent = "Les deux saisies du mot de passe ne correspondent pas.";
+    erreur.hidden = false;
+    return;
+  }
+  if (avecPin && !PIN_VALIDE.test(pin)) {
+    erreur.textContent = "Le code PIN doit faire exactement 6 chiffres.";
+    erreur.hidden = false;
+    return;
+  }
+  if (avecPin && pin !== pinConfirmation) {
+    erreur.textContent = "Les deux saisies du code PIN ne correspondent pas.";
     erreur.hidden = false;
     return;
   }
@@ -66,9 +84,11 @@ async function soumettreCreation(e) {
   }
   $("cf-creation-valider").disabled = true;
   try {
-    await creerCoffre(mdp, $("cf-creation-indice").value.trim());
+    await creerCoffre(mdp, $("cf-creation-indice").value.trim(), avecPin ? pin : "");
     $("cf-creation-mdp").value = "";
     $("cf-creation-confirmation").value = "";
+    $("cf-creation-pin").value = "";
+    $("cf-creation-pin-confirmation").value = "";
     afficherEcran("cf-app");
     surDeverrouille();
     planifierVerrouAuto();
@@ -83,18 +103,21 @@ async function soumettreCreation(e) {
 async function soumettreDeverrouillage(e) {
   e.preventDefault();
   const mdp = $("cf-verrou-mdp").value;
+  const pin = $("cf-verrou-pin").value;
   $("cf-verrou-valider").disabled = true;
   $("cf-verrou-erreur").hidden = true;
-  const ok = await deverrouiller(mdp);
+  const ok = await deverrouiller(mdp, pin);
   $("cf-verrou-valider").disabled = false;
   if (!ok) {
-    $("cf-verrou-erreur").textContent = "Mot de passe incorrect.";
+    $("cf-verrou-erreur").textContent = pinActif() ? "Mot de passe ou code PIN incorrect." : "Mot de passe incorrect.";
     $("cf-verrou-erreur").hidden = false;
     $("cf-verrou-mdp").value = "";
+    $("cf-verrou-pin").value = "";
     $("cf-verrou-mdp").focus();
     return;
   }
   $("cf-verrou-mdp").value = "";
+  $("cf-verrou-pin").value = "";
   afficherEcran("cf-app");
   surDeverrouille();
   planifierVerrouAuto();
@@ -107,7 +130,7 @@ function basculerIndice() {
 }
 
 function proposerReinitialisation() {
-  const texte = prompt('Mot de passe définitivement oublié : la seule solution est EFFACER tout le coffre (toutes les notes seront perdues, sans recours). Tape "EFFACER" pour confirmer.');
+  const texte = prompt('Mot de passe (ou code PIN) définitivement oublié : la seule solution est EFFACER tout le coffre (toutes les notes seront perdues, sans recours). Tape "EFFACER" pour confirmer.');
   if (texte !== "EFFACER") return;
   reinitialiserCoffre();
   message("Coffre effacé.");
@@ -124,6 +147,13 @@ export function initialiserVerrou({ deverrouille, verrouille }) {
   $("cf-creation-voir").addEventListener("click", () => {
     const champ = $("cf-creation-mdp");
     champ.type = champ.type === "password" ? "text" : "password";
+  });
+  $("cf-creation-pin-active").addEventListener("change", (e) => {
+    $("cf-creation-pin-zone").hidden = !e.target.checked;
+    if (!e.target.checked) {
+      $("cf-creation-pin").value = "";
+      $("cf-creation-pin-confirmation").value = "";
+    }
   });
 
   $("cf-verrou-corps").addEventListener("submit", soumettreDeverrouillage);
@@ -143,6 +173,7 @@ export function initialiserVerrou({ deverrouille, verrouille }) {
   });
 
   if (coffreExiste()) {
+    $("cf-verrou-pin-zone").hidden = !pinActif();
     afficherEcran("cf-verrou");
     setTimeout(() => $("cf-verrou-mdp").focus(), 50);
   } else {

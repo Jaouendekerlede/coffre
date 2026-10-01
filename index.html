@@ -33,6 +33,12 @@
         <label>Indice (optionnel, reste visible avant déverrouillage -- reste vague)
           <input type="text" id="cf-creation-indice" maxlength="80" placeholder="Ex. « comme d'habitude, en mieux »">
         </label>
+        <label class="cf-case"><input type="checkbox" id="cf-creation-pin-active"> Protéger aussi avec un code PIN à 6 chiffres (en plus du mot de passe)</label>
+        <div id="cf-creation-pin-zone" hidden>
+          <label>Code PIN (6 chiffres) <input type="password" id="cf-creation-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+          <label>Confirmer le code PIN <input type="password" id="cf-creation-pin-confirmation" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+          <p class="cf-aide">Les deux seront nécessaires à chaque déverrouillage : le code PIN n'est pas juste vérifié à côté, il fait partie du calcul qui protège tes notes.</p>
+        </div>
         <label class="cf-case"><input type="checkbox" id="cf-creation-confirme-risque"> J'ai compris qu'un mot de passe oublié signifie la perte définitive du coffre.</label>
         <p class="cf-erreur" id="cf-creation-erreur" hidden></p>
         <button type="submit" id="cf-creation-valider" class="cf-primaire cf-large">🔒 Créer le coffre</button>
@@ -47,6 +53,7 @@
       <h1>Coffre verrouillé</h1>
       <form id="cf-verrou-corps">
         <label>Mot de passe maître <input type="password" id="cf-verrou-mdp" name="password" autocomplete="current-password" autofocus required></label>
+        <label id="cf-verrou-pin-zone" hidden>Code PIN <input type="password" id="cf-verrou-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
         <p class="cf-erreur" id="cf-verrou-erreur" hidden></p>
         <button type="submit" id="cf-verrou-valider" class="cf-primaire cf-large">🔓 Déverrouiller</button>
       </form>
@@ -124,10 +131,16 @@
     <h2>Changer le mot de passe maître</h2>
     <form id="cf-chg-corps">
       <label>Mot de passe actuel <input type="password" id="cf-chg-actuel" name="password" autocomplete="current-password" required></label>
+      <label id="cf-chg-pin-actuel-zone" hidden>Code PIN actuel <input type="password" id="cf-chg-pin-actuel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
       <label>Nouveau mot de passe <input type="password" id="cf-chg-nouveau" name="new-password" autocomplete="new-password" required minlength="8"></label>
       <div id="cf-chg-force" class="cf-force"></div>
       <label>Confirmer le nouveau mot de passe <input type="password" id="cf-chg-confirmation" name="new-password-confirm" autocomplete="new-password" required></label>
       <label>Nouvel indice (optionnel) <input type="text" id="cf-chg-indice" maxlength="80"></label>
+      <label class="cf-case"><input type="checkbox" id="cf-chg-pin-active"> Protéger aussi avec un code PIN à 6 chiffres</label>
+      <div id="cf-chg-pin-zone" hidden>
+        <label>Nouveau code PIN <input type="password" id="cf-chg-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+        <label>Confirmer le nouveau code PIN <input type="password" id="cf-chg-pin-confirmation" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      </div>
       <p class="cf-erreur" id="cf-chg-erreur" hidden></p>
       <div class="cf-boutons">
         <button type="button" id="cf-chg-fermer" class="cf-secondaire">Annuler</button>

@@ -77,5 +77,15 @@ export function nouveauSel() {
   return aleatoire(TAILLE_SEL);
 }
 
+// Combine mot de passe et code PIN en un seul secret, avant dérivation : le
+// PIN n'est donc pas juste "vérifié à côté", il fait partie intégrante de la
+// clé. Conséquence voulue : un mauvais mot de passe avec le bon PIN, ou
+// l'inverse, donnent la même erreur qu'un échec total -- impossible de
+// deviner l'un en connaissant l'autre.
+const SEPARATEUR_PIN = "\u0000";
+export function combinerSecret(motDePasse, pin) {
+  return pin ? `${motDePasse}${SEPARATEUR_PIN}${pin}` : motDePasse;
+}
+
 export const selVersTexte = versBase64;
 export const texteVersSel = depuisBase64;

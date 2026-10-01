@@ -2,10 +2,17 @@
 // UNIQUEMENT pendant que le coffre est déverrouillé), et passage par
 // crypto.js pour tout ce qui touche au chiffrement. Verrouiller efface
 // vraiment la clé et les entrées de la mémoire -- elles ne sont plus
-// récupérables tant qu'on n'a pas retapé le mot de passe maître.
+// récupérables tant qu'on n'a pas retapé le mot de passe maître (et le code
+// PIN, si le coffre en a un).
+//
+// Code PIN optionnel : quand il est activé, il fait partie du secret combiné
+// envoyé à Argon2id (voir crypto.js, combinerSecret) -- ce n'est pas une
+// vérification séparée. Volontairement : si on vérifiait le PIN à part, un
+// attaquant pourrait tester le mot de passe et le PIN indépendamment l'un de
+// l'autre, ce qui annulerait l'intérêt d'avoir les deux.
 
 import { ARGON2 } from "./config.js";
-import { chiffrer, dechiffrer, deriverCle, nouveauSel, selVersTexte, texteVersSel } from "./crypto.js";
+import { chiffrer, combinerSecret, dechiffrer, deriverCle, nouveauSel, selVersTexte, texteVersSel } from "./crypto.js";
 import { coffreExiste, ecrireCoffreBrut, effacerCoffre, lireCoffreBrut } from "./storage.js";
 
 const VERSION_COFFRE = 1;
@@ -23,26 +30,32 @@ export function indiceMotDePasse() {
   return lireCoffreBrut()?.indice || "";
 }
 
-async function ecrireChiffre(nouvellesEntrees, selOctets, params, indice) {
+export function pinActif() {
+  return !!lireCoffreBrut()?.avecPin;
+}
+
+async function ecrireChiffre(nouvellesEntrees, selOctets, params, indice, avecPin) {
   const brutActuel = lireCoffreBrut();
   const chiffre = await chiffrer(cle, { version: VERSION_COFFRE, entrees: nouvellesEntrees });
   return ecrireCoffreBrut({
     sel: selVersTexte(selOctets),
     argon2: params,
     indice: indice ?? brutActuel?.indice ?? "",
+    avecPin: avecPin ?? brutActuel?.avecPin ?? false,
     chiffre,
     creeLe: brutActuel?.creeLe ?? Date.now(),
     modifieLe: Date.now(),
   });
 }
 
-// Crée un nouveau coffre (vide) protégé par ce mot de passe. Écrase un
-// éventuel coffre existant -- l'appelant doit avoir confirmé avec l'utilisateur.
-export async function creerCoffre(motDePasse, indice = "") {
+// Crée un nouveau coffre (vide) protégé par ce mot de passe (et ce PIN, si
+// fourni). Écrase un éventuel coffre existant -- l'appelant doit avoir
+// confirmé avec l'utilisateur.
+export async function creerCoffre(motDePasse, indice = "", pin = "") {
   const sel = nouveauSel();
-  cle = await deriverCle(motDePasse, sel, ARGON2);
+  cle = await deriverCle(combinerSecret(motDePasse, pin), sel, ARGON2);
   entrees = [];
-  const ok = await ecrireChiffre(entrees, sel, ARGON2, indice);
+  const ok = await ecrireChiffre(entrees, sel, ARGON2, indice, !!pin);
   if (!ok) {
     cle = null;
     entrees = null;
@@ -52,19 +65,21 @@ export async function creerCoffre(motDePasse, indice = "") {
 }
 
 // Tente de déverrouiller. Renvoie true/false ; ne lève pas d'erreur pour un
-// mauvais mot de passe (c'est un résultat attendu, pas une panne).
-export async function deverrouiller(motDePasse) {
+// mauvais mot de passe/PIN (c'est un résultat attendu, pas une panne).
+// `pin` est ignoré si ce coffre n'a pas été protégé par un PIN.
+export async function deverrouiller(motDePasse, pin = "") {
   const brut = lireCoffreBrut();
   if (!brut) return false;
   try {
     const sel = texteVersSel(brut.sel);
-    const candidate = await deriverCle(motDePasse, sel, brut.argon2 || ARGON2);
+    const secret = combinerSecret(motDePasse, brut.avecPin ? pin : "");
+    const candidate = await deriverCle(secret, sel, brut.argon2 || ARGON2);
     const contenu = await dechiffrer(candidate, brut.chiffre);
     cle = candidate;
     entrees = Array.isArray(contenu.entrees) ? contenu.entrees : [];
     return true;
   } catch {
-    return false; // mauvais mot de passe, ou coffre corrompu
+    return false; // mauvais mot de passe, mauvais PIN, ou coffre corrompu
   }
 }
 
@@ -83,7 +98,7 @@ export function listerEntrees() {
 async function remplacerEntrees(nouvellesEntrees) {
   if (!cle) throw new Error("coffre verrouillé");
   const brut = lireCoffreBrut();
-  const ok = await ecrireChiffre(nouvellesEntrees, texteVersSel(brut.sel), brut.argon2, undefined);
+  const ok = await ecrireChiffre(nouvellesEntrees, texteVersSel(brut.sel), brut.argon2, undefined, undefined);
   if (!ok) throw new Error("stockage de l'appareil plein : libère de la place ou supprime une entrée");
   entrees = nouvellesEntrees;
 }
@@ -106,14 +121,15 @@ export async function supprimerEntree(id) {
   await remplacerEntrees(entrees.filter((e) => e.id !== id));
 }
 
-// Vérifie un mot de passe SANS changer l'état courant (ni verrouiller, ni
-// déverrouiller) -- sert à reconfirmer l'identité avant une action sensible
-// (changer le mot de passe maître) même si le coffre est déjà déverrouillé.
-export async function verifierMotDePasse(motDePasse) {
+// Vérifie un mot de passe (+ PIN) SANS changer l'état courant (ni verrouiller,
+// ni déverrouiller) -- sert à reconfirmer l'identité avant une action sensible
+// (changer le mot de passe maître / le PIN) même si le coffre est déjà déverrouillé.
+export async function verifierMotDePasse(motDePasse, pin = "") {
   const brut = lireCoffreBrut();
   if (!brut) return false;
   try {
-    const candidate = await deriverCle(motDePasse, texteVersSel(brut.sel), brut.argon2 || ARGON2);
+    const secret = combinerSecret(motDePasse, brut.avecPin ? pin : "");
+    const candidate = await deriverCle(secret, texteVersSel(brut.sel), brut.argon2 || ARGON2);
     await dechiffrer(candidate, brut.chiffre);
     return true;
   } catch {
@@ -121,17 +137,19 @@ export async function verifierMotDePasse(motDePasse) {
   }
 }
 
-// Change le mot de passe maître (et éventuellement l'indice) : nouveau sel,
-// nouvelle dérivation, les entrées existantes sont reprises telles quelles.
-export async function changerMotDePasse(nouveauMotDePasse, indice = "") {
+// Change le mot de passe maître et/ou le PIN (l'un des deux, ou les deux à la
+// fois) : nouveau sel, nouvelle dérivation à partir du secret combiné, les
+// entrées existantes sont reprises telles quelles. `nouveauPin` vide désactive
+// la protection par PIN.
+export async function changerMotDePasse(nouveauMotDePasse, indice = "", nouveauPin = "") {
   if (!cle || !entrees) throw new Error("coffre verrouillé");
   const sel = nouveauSel();
-  const nouvelleCle = await deriverCle(nouveauMotDePasse, sel, ARGON2);
+  const nouvelleCle = await deriverCle(combinerSecret(nouveauMotDePasse, nouveauPin), sel, ARGON2);
   const ancienneCle = cle;
   const ancienneEntrees = entrees;
   cle = nouvelleCle;
   try {
-    const ok = await ecrireChiffre(ancienneEntrees, sel, ARGON2, indice);
+    const ok = await ecrireChiffre(ancienneEntrees, sel, ARGON2, indice, !!nouveauPin);
     if (!ok) throw new Error("stockage de l'appareil plein");
   } catch (e) {
     cle = ancienneCle; // on ne touche pas au coffre existant en cas d'échec
@@ -140,9 +158,9 @@ export async function changerMotDePasse(nouveauMotDePasse, indice = "") {
   }
 }
 
-// Dernier recours si le mot de passe maître est définitivement perdu : efface
-// tout (sans lui, les données ne servent de toute façon à rien). L'appelant
-// doit avoir fait confirmer très explicitement par l'utilisateur.
+// Dernier recours si le mot de passe maître (ou le PIN) est définitivement
+// perdu : efface tout (sans eux, les données ne servent de toute façon à
+// rien). L'appelant doit avoir fait confirmer très explicitement par l'utilisateur.
 export function reinitialiserCoffre() {
   verrouiller();
   effacerCoffre();
