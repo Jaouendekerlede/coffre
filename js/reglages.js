@@ -115,7 +115,11 @@ async function creerSauvegarde() {
 
 function proposerReinitialisationComplete() {
   const texte = prompt('Effacer TOUT le coffre (toutes les notes, définitivement, sans recours) ? Tape "EFFACER" pour confirmer.');
-  if (texte !== "EFFACER") return;
+  if (texte === null) return; // boîte annulée : rien à signaler
+  if (texte.trim().toUpperCase() !== "EFFACER") {
+    message('Rien n\'a été effacé : il fallait taper exactement "EFFACER".');
+    return;
+  }
   reinitialiserCoffre();
   $("cf-reglages").close();
   surReinitialisation();

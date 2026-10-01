@@ -131,7 +131,14 @@ function basculerIndice() {
 
 function proposerReinitialisation() {
   const texte = prompt('Mot de passe (ou code PIN) définitivement oublié : la seule solution est EFFACER tout le coffre (toutes les notes seront perdues, sans recours). Tape "EFFACER" pour confirmer.');
-  if (texte !== "EFFACER") return;
+  if (texte === null) return; // boîte annulée : rien à signaler
+  // Comparaison insensible à la casse et aux espaces : le clavier du
+  // téléphone met parfois une majuscule automatique sur la première lettre
+  // seulement ("Effacer"), ce qui ne doit pas bloquer silencieusement.
+  if (texte.trim().toUpperCase() !== "EFFACER") {
+    message('Rien n\'a été effacé : il fallait taper exactement "EFFACER".');
+    return;
+  }
   reinitialiserCoffre();
   message("Coffre effacé.");
   afficherEcran("cf-creation");
