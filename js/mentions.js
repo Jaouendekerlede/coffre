@@ -2,8 +2,8 @@
 
 export const PROPRIETAIRE = "Jean-Luc RIO";
 export const ANNEE = 2026;
-export const VERSION = 4;
-export const VERSION_TEXTE = "Version 4 : le code PIN (et son état actuel) est maintenant visible et accessible directement dans Réglages, plus facile à trouver pour un coffre déjà créé. Version 3 : code PIN optionnel à 6 chiffres, requis en plus du mot de passe maître à chaque déverrouillage (combiné cryptographiquement, pas juste vérifié à côté). Version 2 :compatibilité renforcée avec les gestionnaires de mots de passe (Proton Pass et autres) pour remplir le mot de passe maître, et le champ de mot de passe d'une entrée n'est plus proposé par erreur à l'enregistrement du navigateur. Version 1 : coffre de notes chiffré (Argon2id + AES-256-GCM), générateur de mots de passe, verrouillage automatique, lien de sauvegarde chiffré";
+export const VERSION = 5;
+export const VERSION_TEXTE = "Version 5 : les champs « nouveau mot de passe » (création, changement) ne peuvent plus être remplis automatiquement par un gestionnaire de mots de passe -- ce risque a provoqué un blocage réel -- avec un bouton pour vérifier à l'œil ce qui a été tapé. Version 4 :le code PIN (et son état actuel) est maintenant visible et accessible directement dans Réglages, plus facile à trouver pour un coffre déjà créé. Version 3 : code PIN optionnel à 6 chiffres, requis en plus du mot de passe maître à chaque déverrouillage (combiné cryptographiquement, pas juste vérifié à côté). Version 2 :compatibilité renforcée avec les gestionnaires de mots de passe (Proton Pass et autres) pour remplir le mot de passe maître, et le champ de mot de passe d'une entrée n'est plus proposé par erreur à l'enregistrement du navigateur. Version 1 : coffre de notes chiffré (Argon2id + AES-256-GCM), générateur de mots de passe, verrouillage automatique, lien de sauvegarde chiffré";
 
 export const MENTION_COURTE = `© ${ANNEE} ${PROPRIETAIRE} — Tous droits réservés`;
 

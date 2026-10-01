@@ -145,8 +145,11 @@ export function initialiserVerrou({ deverrouille, verrouille }) {
   $("cf-creation-corps").addEventListener("submit", soumettreCreation);
   $("cf-creation-mdp").addEventListener("input", majForceCreation);
   $("cf-creation-voir").addEventListener("click", () => {
-    const champ = $("cf-creation-mdp");
-    champ.type = champ.type === "password" ? "text" : "password";
+    // Affiche aussi la confirmation : c'est en comparant les deux à l'œil
+    // qu'on repère une suggestion du navigateur glissée dans un seul champ.
+    const type = $("cf-creation-mdp").type === "password" ? "text" : "password";
+    $("cf-creation-mdp").type = type;
+    $("cf-creation-confirmation").type = type;
   });
   $("cf-creation-pin-active").addEventListener("change", (e) => {
     $("cf-creation-pin-zone").hidden = !e.target.checked;

@@ -144,6 +144,11 @@ export function initialiserReglages(apresReinitialisation) {
   $("cf-changer-mdp-btn").addEventListener("click", ouvrirChangementMdp);
   $("cf-chg-fermer").addEventListener("click", () => $("cf-changer-mdp").close());
   $("cf-chg-nouveau").addEventListener("input", majForceChangement);
+  $("cf-chg-voir").addEventListener("click", () => {
+    const type = $("cf-chg-nouveau").type === "password" ? "text" : "password";
+    $("cf-chg-nouveau").type = type;
+    $("cf-chg-confirmation").type = type;
+  });
   $("cf-chg-pin-active").addEventListener("change", (e) => {
     $("cf-chg-pin-zone").hidden = !e.target.checked;
     if (!e.target.checked) {
