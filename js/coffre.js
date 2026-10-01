@@ -2,18 +2,15 @@
 // entrées déchiffrées, UNIQUEMENT pendant que le coffre est déverrouillé), et
 // passage par crypto.js pour tout ce qui touche au chiffrement. Verrouiller
 // efface vraiment la clé et les entrées de la mémoire -- elles ne sont plus
-// récupérables tant qu'on n'a pas redéverrouillé (mot de passe+PIN, ou empreinte).
+// récupérables tant qu'on n'a pas redéverrouillé (mot de passe + PIN).
 //
 // Les notes sont chiffrées avec une clé de données (CEK) générée une seule
-// fois à la création du coffre. Cette CEK est elle-même enveloppée (chiffrée)
-// séparément par le mot de passe+PIN, et -- si activée -- par l'empreinte :
-// chaque moyen de déverrouiller a sa propre enveloppe indépendante, et
-// désactiver l'un n'affaiblit jamais les autres. Changer de mot de passe ne
-// touche qu'à SON enveloppe : les notes elles-mêmes ne sont pas rechiffrées.
+// fois à la création du coffre, elle-même enveloppée (chiffrée) par le mot de
+// passe + PIN. Changer de mot de passe ne touche qu'à cette enveloppe : les
+// notes elles-mêmes ne sont pas rechiffrées.
 
 import { ARGON2 } from "./config.js";
 import { chiffrer, combinerSecret, dechiffrer, deriverCle, importerCleBrute, nouveauSel, nouvelleCleDonnees, selVersTexte, texteVersSel } from "./crypto.js";
-import * as biometrie from "./biometrie.js";
 import { coffreExiste, ecrireCoffreBrut, effacerCoffre, lireCoffreBrut } from "./storage.js";
 
 const VERSION_COFFRE = 1;
@@ -33,14 +30,6 @@ export function indiceMotDePasse() {
 
 export function pinActif() {
   return !!lireCoffreBrut()?.avecPin;
-}
-
-export function biometrieActive() {
-  return !!lireCoffreBrut()?.biometrie;
-}
-
-export function biometrieDisponible() {
-  return biometrie.disponible();
 }
 
 async function ecrire(champs) {
@@ -64,7 +53,6 @@ export async function creerCoffre(motDePasse, indice = "", pin = "") {
     avecPin: !!pin,
     cekMdp: await chiffrer(cleMdp, { cek: selVersTexte(cekOctets) }),
     chiffre: await chiffrer(cle, { version: VERSION_COFFRE, entrees }),
-    biometrie: null,
     creeLe: Date.now(),
     modifieLe: Date.now(),
   });
@@ -92,42 +80,6 @@ export async function deverrouiller(motDePasse, pin = "") {
   } catch {
     return false; // mauvais mot de passe, mauvais PIN, ou coffre corrompu
   }
-}
-
-// Tente de déverrouiller avec l'empreinte (doit avoir été activée au
-// préalable). Contrairement à deverrouiller(), lève une erreur descriptive
-// (annulé, non reconnu, capteur absent...) : ce ne sont pas des échecs
-// "attendus" de la même façon qu'un mot de passe tapé faux.
-export async function deverrouillerAvecBiometrie() {
-  const brut = lireCoffreBrut();
-  if (!brut?.biometrie) throw new Error("aucune empreinte enregistrée pour ce coffre");
-  const octets = await biometrie.obtenirCle(brut.biometrie.credentialId);
-  const cleBiometrie = await importerCleBrute(octets);
-  const { cek } = await dechiffrer(cleBiometrie, brut.biometrie.cekBiometrie);
-  const cekCandidate = await importerCleBrute(texteVersSel(cek));
-  const contenu = await dechiffrer(cekCandidate, brut.chiffre);
-  cle = cekCandidate;
-  entrees = Array.isArray(contenu.entrees) ? contenu.entrees : [];
-}
-
-// Active le déverrouillage par empreinte sur CET appareil. Le mot de passe
-// (+ PIN) actuels sont redemandés par l'appelant pour confirmer l'identité
-// ET retrouver la CEK (gardée non exportable en mémoire, donc pas récupérable
-// autrement) -- comme pour changerMotDePasse. Ne touche jamais au mot de
-// passe : il continue de fonctionner après activation.
-export async function activerBiometrie(motDePasseActuel, pinActuel = "") {
-  const brut = lireCoffreBrut();
-  if (!brut) throw new Error("coffre introuvable");
-  const cleMdp = await deriverCle(combinerSecret(motDePasseActuel, brut.avecPin ? pinActuel : ""), texteVersSel(brut.sel), brut.argon2 || ARGON2);
-  const { cek } = await dechiffrer(cleMdp, brut.cekMdp); // lève une erreur si mot de passe/PIN faux
-  const { credentialId, cle: cleBiometrieOctets } = await biometrie.creerCredential();
-  const cleBiometrie = await importerCleBrute(cleBiometrieOctets);
-  const ok = await ecrire({ biometrie: { credentialId, cekBiometrie: await chiffrer(cleBiometrie, { cek }) } });
-  if (!ok) throw new Error("stockage de l'appareil plein");
-}
-
-export async function desactiverBiometrie() {
-  if (!(await ecrire({ biometrie: null }))) throw new Error("stockage de l'appareil plein");
 }
 
 // Efface la clé et les entrées de la mémoire (pas du stockage). Après ça,
@@ -181,10 +133,10 @@ export async function verifierMotDePasse(motDePasse, pin = "") {
   }
 }
 
-// Change le mot de passe maître et/ou le PIN. La CEK (et donc les notes et
-// l'empreinte éventuellement activée) n'est pas touchée : seule son enveloppe
-// "mot de passe" est recalculée. `motDePasseActuel`/`pinActuel` servent à
-// retrouver la CEK -- l'appelant a déjà dû les vérifier avec verifierMotDePasse.
+// Change le mot de passe maître et/ou le PIN. La CEK (et donc les notes)
+// n'est pas touchée : seule son enveloppe "mot de passe" est recalculée.
+// `motDePasseActuel`/`pinActuel` servent à retrouver la CEK -- l'appelant a
+// déjà dû les vérifier avec verifierMotDePasse.
 export async function changerMotDePasse(motDePasseActuel, pinActuel, nouveauMotDePasse, indice = "", nouveauPin = "") {
   const brut = lireCoffreBrut();
   if (!brut) throw new Error("coffre introuvable");
@@ -202,19 +154,16 @@ export async function changerMotDePasse(motDePasseActuel, pinActuel, nouveauMotD
   if (!ok) throw new Error("stockage de l'appareil plein");
 }
 
-// Dernier recours si le mot de passe maître (ou le PIN, ou l'empreinte) est
-// définitivement perdu : efface tout (sans eux, les données ne servent de
-// toute façon à rien). L'appelant doit avoir fait confirmer très explicitement.
+// Dernier recours si le mot de passe maître (ou le PIN) est définitivement
+// perdu : efface tout (sans eux, les données ne servent de toute façon à
+// rien). L'appelant doit avoir fait confirmer très explicitement.
 export function reinitialiserCoffre() {
   verrouiller();
   effacerCoffre();
 }
 
 // Pour le lien de sauvegarde : le coffre tel qu'il est stocké, encore chiffré
-// (jamais les entrées en clair, même si le coffre est déverrouillé). Un
-// identifiant d'empreinte restauré sur un autre appareil ne fonctionnera
-// simplement pas là-bas (le capteur ne le reconnaîtra pas) : le mot de passe
-// reste toujours utilisable pour déverrouiller.
+// (jamais les entrées en clair, même si le coffre est déverrouillé).
 export function exporterCoffreBrut() {
   return lireCoffreBrut();
 }

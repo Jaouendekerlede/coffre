@@ -58,8 +58,6 @@
         <p class="cf-erreur" id="cf-verrou-erreur" hidden></p>
         <button type="submit" id="cf-verrou-valider" class="cf-primaire cf-large">🔓 Déverrouiller</button>
       </form>
-      <button type="button" id="cf-verrou-bio-btn" class="cf-large" hidden>👆 Déverrouiller par empreinte</button>
-      <p class="cf-erreur" id="cf-verrou-bio-erreur" hidden></p>
       <div class="cf-liens-verrou">
         <button type="button" class="cf-lien" id="cf-verrou-indice-btn">💡 Voir l'indice</button>
         <button type="button" class="cf-lien" id="cf-verrou-oublie">Mot de passe oublié ?</button>
@@ -158,21 +156,6 @@
     </form>
   </dialog>
 
-  <!-- Activation du déverrouillage par empreinte -->
-  <dialog id="cf-bio-activer" class="cf-dialog">
-    <h2>Activer le déverrouillage par empreinte</h2>
-    <p class="cf-aide">Confirme d'abord ton identité. Ton téléphone te demandera ensuite ton empreinte ou ton visage (deux fois : une pour créer, une pour vérifier).</p>
-    <form id="cf-bio-corps">
-      <label>Mot de passe actuel <input type="password" id="cf-bio-mdp" name="password" autocomplete="current-password" required></label>
-      <label id="cf-bio-pin-zone" hidden>Code PIN actuel <input type="password" id="cf-bio-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
-      <p class="cf-erreur" id="cf-bio-erreur" hidden></p>
-      <div class="cf-boutons">
-        <button type="button" id="cf-bio-annuler" class="cf-secondaire">Annuler</button>
-        <button type="submit" id="cf-bio-valider" class="cf-primaire">Continuer</button>
-      </div>
-    </form>
-  </dialog>
-
   <!-- Réglages -->
   <dialog id="cf-reglages" class="cf-dialog">
     <h2>Réglages</h2>
@@ -203,12 +186,6 @@
       <h3>Sécurité</h3>
       <p class="cf-aide" id="cf-pin-etat"></p>
       <button type="button" id="cf-changer-mdp-btn" class="cf-large">🔑 Mot de passe maître et code PIN</button>
-    </section>
-    <section id="cf-bio-section">
-      <h3>Déverrouillage par empreinte</h3>
-      <p class="cf-aide" id="cf-bio-etat"></p>
-      <p class="cf-aide">Le mot de passe maître reste toujours utilisable, même une fois l'empreinte activée.</p>
-      <button type="button" id="cf-bio-toggle-btn" class="cf-large"></button>
     </section>
     <section>
       <h3>Sauvegarde</h3>
