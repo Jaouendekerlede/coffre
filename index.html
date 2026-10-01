@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#13100d">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Coffre de notes chiffré : mots de passe, codes et informations sensibles, protégés sur votre appareil.">
+  <title>Coffre</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="cf-splash" class="cf-splash"><img src="icons/icon-192.png" alt=""><span>Coffre</span></div>
+
+  <!-- Création du coffre (premier lancement) -->
+  <section id="cf-creation" class="cf-ecran" hidden>
+    <div class="cf-carte-centrale">
+      <img src="icons/icon-192.png" alt="" class="cf-logo">
+      <h1>Créer ton coffre</h1>
+      <p class="cf-aide">Un seul mot de passe maître protège tout. Il n'est jamais stocké : si tu l'oublies, personne — pas même moi — ne peut récupérer ce qu'il y a dans le coffre.</p>
+      <form id="cf-creation-corps">
+        <label>Mot de passe maître
+          <span class="cf-champ-bouton">
+            <input type="password" id="cf-creation-mdp" autocomplete="new-password" required minlength="8">
+            <button type="button" id="cf-creation-voir" aria-label="Afficher le mot de passe">👁️</button>
+          </span>
+        </label>
+        <div id="cf-creation-force" class="cf-force"></div>
+        <label>Confirmer le mot de passe <input type="password" id="cf-creation-confirmation" autocomplete="new-password" required></label>
+        <label>Indice (optionnel, reste visible avant déverrouillage -- reste vague)
+          <input type="text" id="cf-creation-indice" maxlength="80" placeholder="Ex. « comme d'habitude, en mieux »">
+        </label>
+        <label class="cf-case"><input type="checkbox" id="cf-creation-confirme-risque"> J'ai compris qu'un mot de passe oublié signifie la perte définitive du coffre.</label>
+        <p class="cf-erreur" id="cf-creation-erreur" hidden></p>
+        <button type="submit" id="cf-creation-valider" class="cf-primaire cf-large">🔒 Créer le coffre</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Déverrouillage -->
+  <section id="cf-verrou" class="cf-ecran" hidden>
+    <div class="cf-carte-centrale">
+      <img src="icons/icon-192.png" alt="" class="cf-logo">
+      <h1>Coffre verrouillé</h1>
+      <form id="cf-verrou-corps">
+        <label>Mot de passe maître <input type="password" id="cf-verrou-mdp" autocomplete="current-password" autofocus required></label>
+        <p class="cf-erreur" id="cf-verrou-erreur" hidden></p>
+        <button type="submit" id="cf-verrou-valider" class="cf-primaire cf-large">🔓 Déverrouiller</button>
+      </form>
+      <div class="cf-liens-verrou">
+        <button type="button" class="cf-lien" id="cf-verrou-indice-btn">💡 Voir l'indice</button>
+        <button type="button" class="cf-lien" id="cf-verrou-oublie">Mot de passe oublié ?</button>
+      </div>
+      <p class="cf-aide" id="cf-verrou-indice" hidden></p>
+    </div>
+  </section>
+
+  <!-- Application principale -->
+  <section id="cf-app" hidden>
+    <header class="cf-entete">
+      <h1>🔐 Coffre</h1>
+      <button type="button" class="cf-icone-btn" id="cf-verrouiller-btn" title="Verrouiller" aria-label="Verrouiller">🔒</button>
+      <button type="button" class="cf-icone-btn" id="cf-reglages-btn" title="Réglages" aria-label="Réglages">⚙️</button>
+    </header>
+    <input type="search" id="cf-recherche" class="cf-recherche" placeholder="Rechercher une entrée…" aria-label="Rechercher">
+    <nav id="cf-filtres" class="cf-filtres" aria-label="Catégories"></nav>
+    <main id="cf-liste" class="cf-liste"></main>
+    <button type="button" class="cf-ajout" id="cf-ajouter-btn" title="Ajouter une entrée" aria-label="Ajouter une entrée">＋</button>
+  </section>
+
+  <!-- Ajout / modification d'une entrée -->
+  <dialog id="cf-form" class="cf-dialog">
+    <form method="dialog" id="cf-form-corps">
+      <h2 id="cf-form-titre">Nouvelle entrée</h2>
+      <label>Titre <input type="text" id="cf-f-titre" required maxlength="60" placeholder="Ex. Gmail, Carte Visa, Wi-Fi maison…"></label>
+      <label>Catégorie <select id="cf-f-categorie"></select></label>
+      <label>Identifiant / login
+        <span class="cf-champ-bouton">
+          <input type="text" id="cf-f-login" autocomplete="off" maxlength="120">
+          <button type="button" id="cf-f-login-copier" aria-label="Copier l'identifiant">📋</button>
+        </span>
+      </label>
+      <label>Mot de passe / code
+        <span class="cf-champ-bouton">
+          <input type="password" id="cf-f-mdp" autocomplete="new-password" maxlength="200">
+          <button type="button" id="cf-f-mdp-voir" aria-label="Afficher">👁️</button>
+          <button type="button" id="cf-f-mdp-copier" aria-label="Copier">📋</button>
+        </span>
+      </label>
+      <div id="cf-f-force" class="cf-force"></div>
+      <div class="cf-ligne">
+        <button type="button" id="cf-f-generer-btn" class="cf-secondaire">🎲 Générer un mot de passe</button>
+      </div>
+      <details id="cf-f-generateur">
+        <summary>Options du générateur</summary>
+        <label>Longueur : <output id="cf-gen-longueur-val">20</output>
+          <input type="range" id="cf-gen-longueur" min="8" max="64" value="20">
+        </label>
+        <div class="cf-cases-generateur">
+          <label class="cf-case"><input type="checkbox" id="cf-gen-maj" checked> Majuscules (A-Z)</label>
+          <label class="cf-case"><input type="checkbox" id="cf-gen-min" checked> Minuscules (a-z)</label>
+          <label class="cf-case"><input type="checkbox" id="cf-gen-chiffres" checked> Chiffres (0-9)</label>
+          <label class="cf-case"><input type="checkbox" id="cf-gen-symboles" checked> Symboles (!@#…)</label>
+          <label class="cf-case"><input type="checkbox" id="cf-gen-ambigus"> Inclure les caractères ambigus (l, I, 1, O, 0)</label>
+        </div>
+      </details>
+      <label>Site / URL (optionnel) <input type="url" id="cf-f-url" maxlength="200" placeholder="https://…"></label>
+      <label>Notes (optionnel) <textarea id="cf-f-notes" rows="3" maxlength="2000" placeholder="Questions secrètes, numéro de contrat, remarques…"></textarea></label>
+      <label class="cf-case"><input type="checkbox" id="cf-f-favori"> ★ Favori</label>
+      <p class="cf-erreur" id="cf-f-erreur" hidden></p>
+      <div class="cf-boutons">
+        <button type="button" id="cf-f-supprimer" class="cf-danger" hidden>🗑️ Supprimer</button>
+        <button type="button" id="cf-f-annuler" class="cf-secondaire">Annuler</button>
+        <button type="submit" class="cf-primaire">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Changement du mot de passe maître -->
+  <dialog id="cf-changer-mdp" class="cf-dialog">
+    <h2>Changer le mot de passe maître</h2>
+    <form id="cf-chg-corps">
+      <label>Mot de passe actuel <input type="password" id="cf-chg-actuel" autocomplete="current-password" required></label>
+      <label>Nouveau mot de passe <input type="password" id="cf-chg-nouveau" autocomplete="new-password" required minlength="8"></label>
+      <div id="cf-chg-force" class="cf-force"></div>
+      <label>Confirmer le nouveau mot de passe <input type="password" id="cf-chg-confirmation" autocomplete="new-password" required></label>
+      <label>Nouvel indice (optionnel) <input type="text" id="cf-chg-indice" maxlength="80"></label>
+      <p class="cf-erreur" id="cf-chg-erreur" hidden></p>
+      <div class="cf-boutons">
+        <button type="button" id="cf-chg-fermer" class="cf-secondaire">Annuler</button>
+        <button type="submit" id="cf-chg-valider" class="cf-primaire">Changer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Réglages -->
+  <dialog id="cf-reglages" class="cf-dialog">
+    <h2>Réglages</h2>
+    <section>
+      <h3>Apparence</h3>
+      <label>Thème
+        <select id="cf-theme">
+          <option value="auto">Automatique (suit le téléphone)</option>
+          <option value="sombre">Sombre</option>
+          <option value="clair">Clair</option>
+        </select>
+      </label>
+    </section>
+    <section>
+      <h3>Verrouillage automatique</h3>
+      <label>Après une inactivité de
+        <select id="cf-delai-verrou">
+          <option value="60000">1 minute</option>
+          <option value="180000">3 minutes</option>
+          <option value="300000">5 minutes</option>
+          <option value="600000">10 minutes</option>
+          <option value="0">Jamais (déconseillé)</option>
+        </select>
+      </label>
+      <p class="cf-aide">Le coffre se verrouille aussi dès que l'appli passe en arrière-plan plus de 30 secondes.</p>
+    </section>
+    <section>
+      <h3>Sécurité</h3>
+      <button type="button" id="cf-changer-mdp-btn" class="cf-large">🔑 Changer le mot de passe maître</button>
+    </section>
+    <section>
+      <h3>Sauvegarde</h3>
+      <p class="cf-aide">Il n'y a pas de synchronisation automatique : crée un lien de sauvegarde à conserver. Il est déjà chiffré, donc sûr à garder dans un mail ou une note -- il ne révèle rien sans ton mot de passe maître.</p>
+      <button type="button" id="cf-sauvegarde-btn" class="cf-large">💾 Créer un lien de sauvegarde</button>
+      <p class="cf-aide" id="cf-sauvegarde-retour" hidden></p>
+    </section>
+    <section>
+      <h3>Zone dangereuse</h3>
+      <button type="button" id="cf-reinitialiser-btn" class="cf-large cf-danger">🗑️ Effacer tout le coffre</button>
+    </section>
+    <section>
+      <h3>À propos</h3>
+      <p class="cf-aide" id="cf-version"></p>
+      <p class="cf-aide" id="cf-mention"></p>
+    </section>
+    <div class="cf-boutons"><button type="button" id="cf-reglages-fermer" class="cf-primaire">Fermer</button></div>
+  </dialog>
+
+  <!-- Confirmation d'import d'un lien de sauvegarde -->
+  <dialog id="cf-import" class="cf-dialog">
+    <h2>Restaurer une sauvegarde ?</h2>
+    <p class="cf-aide">Ce lien contient un coffre déjà chiffré. <strong>L'ouvrir remplacera tout le coffre actuel sur cet appareil</strong> (si tu en as déjà un). <span id="cf-import-date"></span></p>
+    <div class="cf-boutons">
+      <button type="button" id="cf-import-annuler" class="cf-secondaire">Annuler</button>
+      <button type="button" id="cf-import-remplacer" class="cf-primaire">Remplacer</button>
+    </div>
+  </dialog>
+
+  <div id="cf-message" class="cf-message" role="status" hidden></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

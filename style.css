@@ -1,0 +1,167 @@
+:root {
+  color-scheme: dark;
+  --fond: #13100d;
+  --fond-haut: #1d1812;
+  --surface: rgba(255, 255, 255, 0.07);
+  --bordure: rgba(255, 255, 255, 0.14);
+  --texte: #f6f1e8;
+  --texte-att: rgba(246, 241, 232, 0.68);
+  --accent: #d4af37;
+  --accent-texte: #1d1812;
+  --dialogue: #221b13;
+  --rouge: #ff7b7b;
+  --vert: #4ade80;
+  --orange: #f59e0b;
+}
+
+:root[data-theme="clair"] {
+  color-scheme: light;
+  --fond: #f3f0ea;
+  --fond-haut: #fbf9f5;
+  --surface: rgba(30, 20, 5, 0.05);
+  --bordure: rgba(30, 20, 5, 0.15);
+  --texte: #211a0f;
+  --texte-att: rgba(33, 26, 15, 0.68);
+  --accent: #a9790a;
+  --accent-texte: #fff;
+  --dialogue: #fff;
+  --rouge: #c0362c;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--texte);
+  background: linear-gradient(180deg, var(--fond-haut), var(--fond));
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+option { color: var(--texte); background: var(--dialogue); }
+[hidden] { display: none !important; }
+
+button {
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+input, select, textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+input[type="checkbox"], input[type="range"] { width: auto; }
+
+.cf-primaire { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); font-weight: 700; }
+.cf-secondaire { color: var(--texte); }
+.cf-danger { color: var(--rouge); border-color: color-mix(in srgb, var(--rouge) 50%, transparent); }
+.cf-large { display: block; width: 100%; margin-top: 10px; }
+.cf-lien { background: none; border: 0; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 6px; }
+.cf-case { display: flex !important; align-items: center; gap: 8px; width: auto; }
+
+/* ── Écrans plein écran (création / verrou) ── */
+.cf-ecran { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 16px); }
+.cf-carte-centrale { width: 100%; max-width: 420px; text-align: center; }
+.cf-logo { width: 72px; height: 72px; border-radius: 18px; margin-bottom: 10px; }
+.cf-carte-centrale h1 { font-size: 1.4rem; margin: 0 0 8px; }
+.cf-carte-centrale form { text-align: left; margin-top: 16px; }
+.cf-carte-centrale label { display: block; margin-top: 12px; font-size: 0.88rem; color: var(--texte-att); }
+.cf-carte-centrale label input { margin-top: 5px; color: var(--texte); }
+.cf-liens-verrou { display: flex; justify-content: space-between; margin-top: 16px; flex-wrap: wrap; }
+
+.cf-champ-bouton { display: flex; gap: 6px; margin-top: 5px; }
+.cf-champ-bouton input { margin-top: 0; }
+.cf-champ-bouton button { flex: none; padding: 8px 10px; }
+
+.cf-aide { font-size: 0.85rem; color: var(--texte-att); line-height: 1.5; margin: 8px 0; overflow-wrap: anywhere; }
+.cf-erreur { color: var(--rouge); font-size: 0.88rem; margin: 10px 0 0; }
+
+/* ── Force d'un mot de passe ── */
+.cf-force { height: 6px; border-radius: 4px; margin-top: 8px; background: var(--surface); position: relative; font-size: 0.75rem; text-align: right; color: var(--texte-att); }
+.cf-force:empty { display: none; }
+.cf-force::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; width: var(--w, 0%); background: var(--c, var(--rouge)); transition: width 0.2s; }
+.cf-force-faible { --w: 25%; --c: var(--rouge); }
+.cf-force-moyen { --w: 50%; --c: var(--orange); }
+.cf-force-fort { --w: 75%; --c: #a3e635; }
+.cf-force-tres-fort { --w: 100%; --c: var(--vert); }
+.cf-force { padding-top: 9px; }
+
+/* ── Application principale ── */
+.cf-entete { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top) + 12px) 14px 0; max-width: 900px; margin: 0 auto; }
+.cf-entete h1 { margin: 0; flex: 1; font-size: 1.5rem; }
+.cf-icone-btn { padding: 8px 12px; font-size: 1.05rem; }
+.cf-recherche, .cf-filtres, .cf-liste { max-width: 900px; margin: 0 auto; padding-left: 14px; padding-right: 14px; }
+.cf-recherche { display: block; margin-top: 12px; }
+.cf-filtres { display: flex; gap: 8px; overflow-x: auto; padding-top: 12px; padding-bottom: 6px; scrollbar-width: none; }
+.cf-filtres::-webkit-scrollbar { display: none; }
+.cf-puce { flex: none; border-radius: 999px; padding: 6px 14px; white-space: nowrap; }
+.cf-puce.actif { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); font-weight: 600; }
+
+.cf-liste { display: flex; flex-direction: column; gap: 10px; padding-bottom: calc(env(safe-area-inset-bottom) + 100px); margin-top: 6px; }
+.cf-entree {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.cf-entree-icone { font-size: 1.4rem; flex: none; }
+.cf-entree-milieu { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.cf-entree-milieu strong { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-entree-sous { font-size: 0.82rem; color: var(--texte-att); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-entree-star { color: var(--accent); font-size: 1.1rem; flex: none; }
+.cf-vide { text-align: center; white-space: pre-line; color: var(--texte-att); padding: 60px 16px; line-height: 1.6; }
+
+.cf-ajout {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 18px);
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  font-size: 2rem;
+  line-height: 1;
+  background: var(--accent);
+  color: var(--accent-texte);
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Dialogues ── */
+.cf-dialog { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); background: var(--dialogue); color: var(--texte); border: 1px solid var(--bordure); border-radius: 22px; padding: 18px; }
+.cf-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.cf-dialog h2 { margin: 0 0 8px; }
+.cf-dialog h3 { margin: 16px 0 6px; font-size: 1rem; }
+.cf-dialog label { display: block; margin-top: 12px; font-size: 0.88rem; color: var(--texte-att); }
+.cf-dialog label input, .cf-dialog label select, .cf-dialog label textarea { margin-top: 5px; color: var(--texte); }
+.cf-boutons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+.cf-boutons .cf-danger { margin-right: auto; }
+.cf-ligne { display: flex; gap: 8px; margin-top: 12px; }
+.cf-ligne > button { flex: 1; }
+
+details#cf-f-generateur { margin-top: 10px; border: 1px solid var(--bordure); border-radius: 12px; padding: 8px 12px; }
+details#cf-f-generateur summary { cursor: pointer; font-size: 0.88rem; color: var(--texte-att); padding: 4px 0; }
+.cf-cases-generateur { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
+/* ── Divers ── */
+.cf-message { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 90px); transform: translateX(-50%); max-width: calc(100vw - 32px); z-index: 90; padding: 10px 16px; border-radius: 14px; background: #2a2115; color: #fff; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); text-align: center; }
+:root[data-theme="clair"] .cf-message { background: #332a1a; }
+
+.cf-splash { position: fixed; inset: 0; z-index: 200; background: var(--fond); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 1.6rem; font-weight: 800; letter-spacing: 1px; transition: opacity 0.4s ease; }
+.cf-splash img { width: 96px; height: 96px; border-radius: 24px; }
+.cf-splash.fini { opacity: 0; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
