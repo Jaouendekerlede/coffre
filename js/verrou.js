@@ -4,7 +4,7 @@
 // l'écran principal une fois déverrouillé.
 
 import { DELAI_ARRIERE_PLAN_MS, DELAI_INACTIVITE_MS } from "./config.js";
-import { coffreExiste, creerCoffre, deverrouiller, estDeverrouille, indiceMotDePasse, pinActif, reinitialiserCoffre, verrouiller } from "./coffre.js";
+import { biometrieActive, biometrieDisponible, coffreExiste, creerCoffre, deverrouiller, deverrouillerAvecBiometrie, estDeverrouille, indiceMotDePasse, pinActif, reinitialiserCoffre, verrouiller } from "./coffre.js";
 import { estimerForce } from "./generateur.js";
 import { lirePrefs } from "./storage.js";
 import { $, message } from "./utils.js";
@@ -18,6 +18,21 @@ let masqueeDepuis = null;
 
 function afficherEcran(nom) {
   for (const id of ["cf-creation", "cf-verrou", "cf-app"]) $(id).hidden = id !== nom;
+}
+
+function majBoutonBiometrie() {
+  $("cf-verrou-bio-btn").hidden = !(biometrieActive() && biometrieDisponible());
+  $("cf-verrou-bio-erreur").hidden = true;
+}
+
+// Fait passer l'écran de verrouillage à l'appli, après un déverrouillage
+// réussi (mot de passe ou empreinte).
+function surDeverrouillageReussi() {
+  $("cf-verrou-mdp").value = "";
+  $("cf-verrou-pin").value = "";
+  afficherEcran("cf-app");
+  surDeverrouille();
+  planifierVerrouAuto();
 }
 
 function planifierVerrouAuto() {
@@ -36,6 +51,7 @@ export function verrouillerMaintenant(raison = "manuel") {
   $("cf-verrou-pin-zone").hidden = !pinActif();
   $("cf-verrou-erreur").hidden = true;
   $("cf-verrou-indice").hidden = true;
+  majBoutonBiometrie();
   afficherEcran("cf-verrou");
   surVerrouille(raison);
   setTimeout(() => $("cf-verrou-mdp").focus(), 50);
@@ -116,11 +132,21 @@ async function soumettreDeverrouillage(e) {
     $("cf-verrou-mdp").focus();
     return;
   }
-  $("cf-verrou-mdp").value = "";
-  $("cf-verrou-pin").value = "";
-  afficherEcran("cf-app");
-  surDeverrouille();
-  planifierVerrouAuto();
+  surDeverrouillageReussi();
+}
+
+async function tenterDeverrouillageBiometrique() {
+  $("cf-verrou-bio-btn").disabled = true;
+  $("cf-verrou-bio-erreur").hidden = true;
+  try {
+    await deverrouillerAvecBiometrie();
+    surDeverrouillageReussi();
+  } catch (err) {
+    $("cf-verrou-bio-erreur").textContent = `⚠️ ${err.message} -- utilise ton mot de passe.`;
+    $("cf-verrou-bio-erreur").hidden = false;
+  } finally {
+    $("cf-verrou-bio-btn").disabled = false;
+  }
 }
 
 function basculerIndice() {
@@ -167,6 +193,7 @@ export function initialiserVerrou({ deverrouille, verrouille }) {
   });
 
   $("cf-verrou-corps").addEventListener("submit", soumettreDeverrouillage);
+  $("cf-verrou-bio-btn").addEventListener("click", tenterDeverrouillageBiometrique);
   $("cf-verrou-indice-btn").addEventListener("click", basculerIndice);
   $("cf-verrou-oublie").addEventListener("click", proposerReinitialisation);
 
@@ -184,6 +211,7 @@ export function initialiserVerrou({ deverrouille, verrouille }) {
 
   if (coffreExiste()) {
     $("cf-verrou-pin-zone").hidden = !pinActif();
+    majBoutonBiometrie();
     afficherEcran("cf-verrou");
     setTimeout(() => $("cf-verrou-mdp").focus(), 50);
   } else {

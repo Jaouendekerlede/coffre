@@ -3,7 +3,7 @@
 // mentions légales.
 
 import { LIEN_LONG } from "./config.js";
-import { changerMotDePasse, pinActif, reinitialiserCoffre, verifierMotDePasse } from "./coffre.js";
+import { activerBiometrie, biometrieActive, biometrieDisponible, changerMotDePasse, desactiverBiometrie, pinActif, reinitialiserCoffre, verifierMotDePasse } from "./coffre.js";
 import { estimerForce } from "./generateur.js";
 import { MENTION_COURTE, MENTION_LEGALE, VERSION_TEXTE } from "./mentions.js";
 import { creerLienSauvegarde } from "./restauration.js";
@@ -76,7 +76,7 @@ async function validerChangementMdp(e) {
       erreur.hidden = false;
       return;
     }
-    await changerMotDePasse(nouveau, $("cf-chg-indice").value.trim(), avecNouveauPin ? nouveauPin : "");
+    await changerMotDePasse(actuel, pinActuel, nouveau, $("cf-chg-indice").value.trim(), avecNouveauPin ? nouveauPin : "");
     $("cf-chg-actuel").value = "";
     $("cf-chg-pin-actuel").value = "";
     $("cf-chg-nouveau").value = "";
@@ -113,6 +113,62 @@ async function creerSauvegarde() {
   }
 }
 
+function majEtatBiometrie() {
+  const dispo = biometrieDisponible();
+  const actif = biometrieActive();
+  $("cf-bio-section").hidden = !dispo && !actif;
+  if (!dispo) {
+    $("cf-bio-etat").textContent = "Pas disponible sur ce navigateur/appareil.";
+    $("cf-bio-toggle-btn").hidden = true;
+    return;
+  }
+  $("cf-bio-toggle-btn").hidden = false;
+  $("cf-bio-etat").textContent = actif ? "👆 Activé : tu peux déverrouiller avec ton empreinte/visage." : "Non activé -- le mot de passe reste le seul moyen de déverrouiller.";
+  $("cf-bio-toggle-btn").textContent = actif ? "🚫 Désactiver le déverrouillage biométrique" : "👆 Activer le déverrouillage biométrique";
+}
+
+function ouvrirActivationBiometrie() {
+  $("cf-bio-mdp").value = "";
+  $("cf-bio-pin").value = "";
+  $("cf-bio-pin-zone").hidden = !pinActif();
+  $("cf-bio-erreur").hidden = true;
+  $("cf-bio-activer").showModal();
+}
+
+async function validerActivationBiometrie(e) {
+  e.preventDefault();
+  const erreur = $("cf-bio-erreur");
+  erreur.hidden = true;
+  $("cf-bio-valider").disabled = true;
+  try {
+    await activerBiometrie($("cf-bio-mdp").value, $("cf-bio-pin").value);
+    $("cf-bio-mdp").value = "";
+    $("cf-bio-pin").value = "";
+    $("cf-bio-activer").close();
+    majEtatBiometrie();
+    message("✅ Déverrouillage par empreinte activé.");
+  } catch (err) {
+    erreur.textContent = `⚠️ ${err.message}`;
+    erreur.hidden = false;
+  } finally {
+    $("cf-bio-valider").disabled = false;
+  }
+}
+
+function basculerBiometrie() {
+  if (biometrieActive()) {
+    if (!confirm("Désactiver le déverrouillage par empreinte ? Le mot de passe maître restera le seul moyen de déverrouiller.")) return;
+    desactiverBiometrie()
+      .then(() => {
+        majEtatBiometrie();
+        message("Déverrouillage par empreinte désactivé.");
+      })
+      .catch((err) => message(`⚠️ ${err.message}`));
+  } else {
+    ouvrirActivationBiometrie();
+  }
+}
+
 function proposerReinitialisationComplete() {
   const texte = prompt('Effacer TOUT le coffre (toutes les notes, définitivement, sans recours) ? Tape "EFFACER" pour confirmer.');
   if (texte === null) return; // boîte annulée : rien à signaler
@@ -136,6 +192,7 @@ export function initialiserReglages(apresReinitialisation) {
     $("cf-delai-verrou").value = String(p.delaiVerrouMs ?? 180000);
     $("cf-sauvegarde-retour").hidden = true;
     $("cf-pin-etat").textContent = pinActif() ? "🔢 Code PIN activé : demandé en plus du mot de passe." : "Aucun code PIN -- tu peux en ajouter un ci-dessous.";
+    majEtatBiometrie();
     $("cf-reglages").showModal();
   });
   $("cf-reglages-fermer").addEventListener("click", () => $("cf-reglages").close());
@@ -163,5 +220,8 @@ export function initialiserReglages(apresReinitialisation) {
   $("cf-chg-corps").addEventListener("submit", validerChangementMdp);
 
   $("cf-sauvegarde-btn").addEventListener("click", creerSauvegarde);
+  $("cf-bio-toggle-btn").addEventListener("click", basculerBiometrie);
+  $("cf-bio-annuler").addEventListener("click", () => $("cf-bio-activer").close());
+  $("cf-bio-corps").addEventListener("submit", validerActivationBiometrie);
   $("cf-reinitialiser-btn").addEventListener("click", proposerReinitialisationComplete);
 }

@@ -77,6 +77,20 @@ export function nouveauSel() {
   return aleatoire(TAILLE_SEL);
 }
 
+// Clé de chiffrement des données ("CEK") : 32 octets aléatoires, générés une
+// fois à la création du coffre. Les notes sont chiffrées avec elle -- jamais
+// directement avec le mot de passe ou l'empreinte. Ceux-ci servent seulement
+// à "envelopper" (chiffrer) cette clé : il peut donc y avoir plusieurs façons
+// de la retrouver (mot de passe+PIN, empreinte...) sans jamais avoir à
+// rechiffrer les notes, et désactiver l'une des façons n'affaiblit pas les autres.
+export function nouvelleCleDonnees() {
+  return aleatoire(32);
+}
+
+export function importerCleBrute(octets) {
+  return crypto.subtle.importKey("raw", octets, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
 // Combine mot de passe et code PIN en un seul secret, avant dérivation : le
 // PIN n'est donc pas juste "vérifié à côté", il fait partie intégrante de la
 // clé. Conséquence voulue : un mauvais mot de passe avec le bon PIN, ou
