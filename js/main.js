@@ -18,8 +18,22 @@ function surVerrouillage() {
   reinitialiserFiltres();
 }
 
+// Reçu via le menu Partager du téléphone (ex: Scanix -> Envoyer le texte
+// reconnu), ou via un lien direct construit par une autre appli -- ouvre
+// une nouvelle entrée préremplie dès le déverrouillage (jamais avant : le
+// formulaire manipule des données qui doivent rester dans le coffre
+// déchiffré). Demande explicite du 2026-10-09.
+function proposerAjoutPartageSiPresent() {
+  const parametres = new URLSearchParams(location.search);
+  const titre = parametres.get("titre");
+  if (!titre) return;
+  history.replaceState(null, "", location.pathname);
+  ouvrirFormulaire(null, { titrePredefini: titre, notesPredefinies: parametres.get("texte") || "" });
+}
+
 function surDeverrouillage() {
   afficherListe();
+  proposerAjoutPartageSiPresent();
 }
 
 async function proposerImportSiPresent() {

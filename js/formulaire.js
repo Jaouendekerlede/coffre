@@ -29,19 +29,19 @@ function genererEtRemplir() {
   majForce();
 }
 
-export function ouvrirFormulaire(id = null) {
+export function ouvrirFormulaire(id = null, { titrePredefini, notesPredefinies } = {}) {
   idEnCours = id;
   const existante = id ? listerEntrees().find((e) => e.id === id) : null;
   $("cf-form-titre").textContent = existante ? "Modifier l'entrée" : "Nouvelle entrée";
   $("cf-f-supprimer").hidden = !existante;
-  $("cf-f-titre").value = existante?.titre ?? "";
-  $("cf-f-categorie").value = existante?.categorie ?? "mdp";
+  $("cf-f-titre").value = existante?.titre ?? titrePredefini ?? "";
+  $("cf-f-categorie").value = existante?.categorie ?? (titrePredefini ? "note" : "mdp");
   $("cf-f-login").value = existante?.login ?? "";
   $("cf-f-mdp").value = existante?.mdp ?? "";
   $("cf-f-mdp").type = "password";
   $("cf-f-mdp-voir").textContent = "👁️";
   $("cf-f-url").value = existante?.url ?? "";
-  $("cf-f-notes").value = existante?.notes ?? "";
+  $("cf-f-notes").value = existante?.notes ?? notesPredefinies ?? "";
   $("cf-f-favori").checked = !!existante?.favori;
   $("cf-f-generateur").open = false;
   majForce();
